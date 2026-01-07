@@ -95,7 +95,7 @@
                 class="input w-full !py-2 text-xs font-bold uppercase tracking-wider"
               >
                 <option value="">Select a category...</option>
-                <option v-for="cat in categories" :key="cat.id" :value="cat.id">
+                <option v-for="cat in getFlattenedCategories(categories)" :key="cat.id" :value="cat.id">
                   {{ cat.name }}
                 </option>
               </select>
@@ -343,6 +343,26 @@ const { data: categories } = await useFetch('/api/categories');
 const renderedDescription = computed(() => {
   return marked.parse(description.value || '');
 });
+
+function getFlattenedCategories(
+  categories: Array<{ id: string; name: string; subcategories?: any[] }>,
+  prefix = ''
+): Array<{ id: string; name: string }> {
+
+  let result: Array<{ id: string; name: string }> = [];
+
+  for (const category of categories) {
+    result.push({ id: category.id, name: prefix + category.name });
+
+    if (category.subcategories) {
+      result = result.concat(
+        getFlattenedCategories(category.subcategories, prefix + '╚=> ')
+      );
+    }
+  }
+
+  return result;
+}
 
 function close() {
   emit('close');
