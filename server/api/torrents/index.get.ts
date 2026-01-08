@@ -44,7 +44,17 @@ export default defineEventHandler(async (event) => {
     }
   }
   if (query.categoryId) {
-    conditions.push(eq(schema.torrents.categoryId, query.categoryId));
+    // add category and subcategories filter
+    const subcategories = await db.query.categories.findMany({
+      where: eq(schema.categories.parentId, query.categoryId),
+      select: { id: true },
+    });
+    conditions.push(
+      or(
+          eq(schema.torrents.categoryId, query.categoryId),
+          ...subcategories.map((subcat) => eq(schema.torrents.categoryId, subcat.id))
+      )
+    );
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

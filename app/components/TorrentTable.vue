@@ -60,7 +60,7 @@
             v-if="torrent.category"
             class="text-[10px] bg-bg-tertiary border border-border px-1.5 py-0.5 rounded-sm text-text-secondary uppercase font-bold tracking-wider"
           >
-            {{ torrent.category.name }}
+            {{ getCategoryDisplayName(torrent.category) }}
           </span>
           <span v-else class="text-xs text-text-muted">—</span>
         </td>
@@ -128,6 +128,8 @@ interface TorrentWithStats {
   };
 }
 
+const { data: categories } = await useFetch('/api/categories');
+
 const props = defineProps<{
   torrents: TorrentWithStats[];
   compact?: boolean;
@@ -137,6 +139,20 @@ const props = defineProps<{
 const emit = defineEmits<{
   deleted: [infoHash: string];
 }>();
+
+function getCategoryDisplayName(category) {
+  let displayName = category.name;
+
+  const parent = categories.value.find(
+    (cat) => cat.id === category.parentId
+  );
+
+  if (parent) {
+    displayName = `${parent.name}/${displayName}`;
+  }
+
+  return displayName;
+}
 
 async function deleteTorrent(torrent: TorrentWithStats) {
   if (!confirm(`Delete "${torrent.name}"?`)) return;
