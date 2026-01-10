@@ -351,8 +351,15 @@ const { data: branding } = await useFetch<{
   pageTitleSuffix: string | null;
 }>('/api/branding');
 
-// Set dynamic favicon
+// Set dynamic favicon and title template
 useHead({
+  titleTemplate: computed(() => {
+    const suffix =
+      branding.value?.pageTitleSuffix ||
+      `- ${branding.value?.siteName?.replace(/<[^>]*>/g, '') || 'TRACKARR'}`;
+    return (title?: string) =>
+      title ? `${title} ${suffix}` : suffix.replace(/^- /, '');
+  }),
   link: [
     {
       rel: 'icon',

@@ -405,11 +405,11 @@
             type="text"
             maxlength="100"
             class="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-white/20"
-            :placeholder="`- ${siteName || 'Trackarr'}`"
+            :placeholder="`- ${siteName?.replace(/<[^>]*>/g, '') || 'Trackarr'}`"
           />
           <p class="text-[10px] text-text-muted">
-            Example: "Search Torrents{{
-              pageTitleSuffix || ` - ${siteName || 'Trackarr'}`
+            Example: "Search Torrents {{
+              pageTitleSuffix || ` - ${siteName?.replace(/<[^>]*>/g, '') || 'Trackarr'}`
             }}"
           </p>
         </div>
