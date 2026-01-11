@@ -38,17 +38,17 @@
           </div>
           <div class="flex flex-col leading-none">
             <span
-              class="text-sm tracking-tighter uppercase transition-colors"
+              class="text-sm tracking-tighter transition-colors"
               :class="{
                 'font-bold': siteNameBold,
                 'font-medium': !siteNameBold,
               }"
               :style="{ color: siteNameColor || '' }"
-              v-html="siteName || 'Trackarr'"
+              v-html="siteName"
             ></span>
-            <span class="text-[10px] text-text-muted font-mono">{{
-              siteSubtitle || `v${useRuntimeConfig().public.appVersion}`
-            }}</span>
+            <span class="text-[10px] text-text-muted font-mono"
+              v-html="siteSubtitle"
+            ></span>
           </div>
         </div>
       </div>
@@ -405,11 +405,11 @@
             type="text"
             maxlength="100"
             class="w-full bg-bg-tertiary border border-border rounded px-3 py-2 text-sm text-text-primary focus:outline-none focus:border-white/20"
-            :placeholder="`- ${siteName || 'Trackarr'}`"
+            :placeholder="`- ${siteName?.replace(/<[^>]*>/g, '') || 'Trackarr'}`"
           />
           <p class="text-[10px] text-text-muted">
-            Example: "Search Torrents{{
-              pageTitleSuffix || ` - ${siteName || 'Trackarr'}`
+            Example: "Search Torrents {{
+              pageTitleSuffix || ` - ${siteName?.replace(/<[^>]*>/g, '') || 'Trackarr'}`
             }}"
           </p>
         </div>
@@ -486,7 +486,7 @@
         >
           <WysiwygEditor
             v-model="heroTitle"
-            placeholder="Trackarr"
+            placeholder="Enter hero title..."
             :maxLength="500"
           />
         </SettingsGroup>
